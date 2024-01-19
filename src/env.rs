@@ -1,16 +1,18 @@
-use std::{process::{Command, ExitStatus}, path::Path};
+use std::{process::Command, path::Path};
 
-pub fn run_shell_command(command: impl AsRef<str>) -> Result<String, ExitStatus> {
+pub fn run_shell_command(command: impl AsRef<str>) -> Result<String, String> {
     let command = command.as_ref();
     let output = Command::new("sh")
         .arg("-c")
         .arg(command)
         .output()
         .expect("failed to execute process");
+    let mut stdouterr = String::from_utf8_lossy(&output.stdout).into_owned();
+    stdouterr.push_str(String::from_utf8_lossy(&output.stderr).as_ref());
     if output.status.success() {
-        Ok(String::from_utf8(output.stdout).unwrap())
+        Ok(stdouterr)
     } else {
-        Err(output.status)
+        Err(stdouterr)
     }
 }
 

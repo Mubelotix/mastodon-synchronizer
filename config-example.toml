@@ -1,6 +1,7 @@
 [defaults]
 refresh_delay = 3600
 instance = "mastodon.insa.lol"
+login = "yourlogin"
 
 [accounts]
 satoshi = "token-redacted"

@@ -14,6 +14,9 @@ struct RawFullAccountConfig {
 
     #[serde(default)]
     refresh_delay: Option<u32>,
+
+    #[serde(default)]
+    login: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -27,6 +30,7 @@ enum RawAccountConfig {
 struct RawConfigDefaults {
     refresh_delay: u32,
     instance: String,
+    login: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -42,6 +46,7 @@ pub struct AccountConfig {
     pub instance: String,
     pub token: String,
     pub refresh_delay: u32,
+    pub login: Option<String>,
 }
 
 pub type Config = Vec<AccountConfig>;
@@ -58,6 +63,7 @@ pub fn read_config(path: &str) -> (Document, Config) {
                 instagram: None,
                 instance: None,
                 refresh_delay: None,
+                login: None,
             },
             RawAccountConfig::Full(full_account_config) => full_account_config,
         };
@@ -67,6 +73,7 @@ pub fn read_config(path: &str) -> (Document, Config) {
             token: raw_account_config.token,
             instance: raw_account_config.instance.unwrap_or_else(|| raw_config.defaults.instance.clone()),
             refresh_delay: raw_account_config.refresh_delay.unwrap_or_else(|| raw_config.defaults.refresh_delay),
+            login: raw_account_config.login.or(raw_config.defaults.login.clone()),
         });
     }
     (doc, config)
