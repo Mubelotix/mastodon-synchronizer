@@ -1,7 +1,9 @@
 mod config;
-use config::*;
+pub use config::*;
 mod env;
-use env::*;
+pub use env::*;
+mod instagram;
+pub use instagram::*;
 
 fn main() {
     // Read config
@@ -15,6 +17,8 @@ fn main() {
 
     // Install instaloader
     install_instaloader();
+
+    download_all(&config);
 
     // For each new post:
 

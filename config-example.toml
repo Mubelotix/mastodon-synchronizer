@@ -1,0 +1,7 @@
+[defaults]
+refresh_delay = 3600
+instance = "mastodon.insa.lol"
+
+[accounts]
+satoshi = "token-redacted"
+mubelotix = { token="value", instance="mastodon.insa.lol" }

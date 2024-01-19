@@ -1,6 +1,6 @@
 use std::{process::{Command, ExitStatus}, path::Path};
 
-fn run_shell_command(command: impl AsRef<str>) -> Result<String, ExitStatus> {
+pub fn run_shell_command(command: impl AsRef<str>) -> Result<String, ExitStatus> {
     let command = command.as_ref();
     let output = Command::new("sh")
         .arg("-c")
