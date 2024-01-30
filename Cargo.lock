@@ -43,6 +43,7 @@ dependencies = [
  "progress_bar",
  "serde",
  "serde_json",
+ "string-tools",
  "toml_edit",
 ]
 
@@ -124,6 +125,12 @@ checksum = "eb3622f419d1296904700073ea6cc23ad690adbd66f13ea683df73298736f0c1"
 dependencies = [
  "serde",
 ]
+
+[[package]]
+name = "string-tools"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a2c9b7010788b8d275fd75820e282be8cb3c177c80301d709aa54725322d6a3"
 
 [[package]]
 name = "syn"

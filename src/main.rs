@@ -20,6 +20,9 @@ fn main() {
 
     download_all(&config);
 
+    let posts = detect_all(&config);
+    println!("{:#?}", posts);
+
     // For each new post:
 
     // Post image on mastodon
