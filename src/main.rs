@@ -4,6 +4,8 @@ mod env;
 pub use env::*;
 mod instagram;
 pub use instagram::*;
+mod mastodon;
+pub use mastodon::*;
 
 fn main() {
     // Read config
