@@ -1,3 +1,4 @@
+use std::{thread::sleep, time::Duration};
 mod config;
 pub use config::*;
 mod env;
@@ -33,6 +34,7 @@ fn main() {
         for post in posts {
             upload_post(&config.instance, &post, &config.token).expect("Couldn't upload post");
             delete_post(&config.instagram, post).expect("Couldn't delete post");
+            sleep(Duration::from_secs(10));
         }
     }
 }
