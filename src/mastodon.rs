@@ -1,3 +1,5 @@
+use std::{collections::HashMap, thread::sleep, time::Duration};
+
 use crate::*;
 use anyhow::bail;
 use reqwest::{blocking::{multipart::Form, Client}, Url};
@@ -100,53 +102,67 @@ pub fn upload_post(instance_domain: &str, post: Post, token: &str) -> anyhow::Re
         parts.push(String::new());
     }
 
+    // Upload all media
+    let mut media_ids = HashMap::new();
+    for content_path in &post.content_paths {
+        let id = upload_media(instance_domain, content_path, token, &client)?;
+        media_ids.insert(content_path, id);
+    }
+
     let mut previous_id = None;
     let part_len = parts.len();
     for (i, (part, media_part)) in parts.into_iter().zip(media_parts).enumerate() {
-        // Add text and settings
-        let mut form = Form::new();
-        if !part.is_empty() {
-            let part = match part_len == 1 {
-                true => part.trim().to_owned(),
-                false => format!("{} [{}/{part_len}]", part.trim(), i + 1)
-            };
-            form = form.text("status", part).text("language", "fr")
-        }
-        match previous_id {
-            Some(id) => {
-                form = form.text("in_reply_to_id", id).text("visibility", "unlisted");
-            },
-            None => {
-                form = form.text("visibility", "public");
+        let mut retries = 0;
+        loop {
+            // Add text and settings
+            let mut form = Form::new();
+            if !part.is_empty() {
+                let part = match part_len == 1 {
+                    true => part.trim().to_owned(),
+                    false => format!("{} [{}/{part_len}]", part.trim(), i + 1)
+                };
+                form = form.text("status", part).text("language", "fr")
             }
-        }
+            match previous_id.clone() {
+                Some(id) => {
+                    form = form.text("in_reply_to_id", id).text("visibility", "unlisted");
+                },
+                None => {
+                    form = form.text("visibility", "public");
+                }
+            }
 
-        // Add media
-        for content_path in media_part {
-            let id = upload_media(instance_domain, content_path, token, &client)?;
-            form = form.text("media_ids[]", id);
-        }
+            // Add media
+            for content_path in &media_part {
+                let id = media_ids.get(content_path).expect("Couldn't find media id").clone();
+                form = form.text("media_ids[]", id);
+            }
 
-        // Send request
-        let url = format!("https://{instance_domain}/api/v1/statuses");
-        let url = Url::parse(&url)?;
-        let rep = client.post(url)
-            .multipart(form)
-            .header("Authorization", format!("Bearer {token}"))
-            .send()?;
-        let status = rep.status();
-        let text = rep.text()?;
-        if status != 200 && status != 202 {
-            bail!("Unsuccessful response: {text}")
+            // Send request
+            let url = format!("https://{instance_domain}/api/v1/statuses");
+            let url = Url::parse(&url)?;
+            let rep = client.post(url)
+                .multipart(form)
+                .header("Authorization", format!("Bearer {token}"))
+                .send()?;
+            let status = rep.status();
+            let text = rep.text()?;
+            if status != 200 && status != 202 {
+                if text.contains("Réessayez dans un instant") && retries < 25 {
+                    retries += 1;
+                    sleep(Duration::from_secs(10));
+                    continue;
+                }
+                bail!("Unsuccessful response: {text}")
+            }
+            let json = serde_json::from_str::<serde_json::Value>(&text)?;
+            let Some(id) = json["id"].as_str() else {
+                bail!("Unexpected type");
+            };
+            previous_id = Some(id.to_owned());
+            break;
         }
-        let json = serde_json::from_str::<serde_json::Value>(&text)?;
-        let Some(id) = json["id"].as_str() else {
-            bail!("Unexpected type");
-        };
-        previous_id = Some(id.to_owned());
     }
-
-
 
     Ok(())
 }

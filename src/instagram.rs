@@ -35,6 +35,7 @@ pub fn download_all(config: &Config) {
 
 #[derive(Debug)]
 pub struct Post {
+    id: String,
     pub description: String,
     pub content_paths: Vec<String>
 }
@@ -78,10 +79,13 @@ fn detect_posts(instagram_username: &str) -> Vec<Post> {
         }
         content_paths.sort();
         posts.push(Post {
+            id: post_id,
             description,
             content_paths
         });
     }
+
+    posts.sort_by_key(|post| post.id.clone());
 
     posts
 }

@@ -29,9 +29,7 @@ fn main() {
         let config = config.iter().find(|account| account.username == username).expect("Couldn't find account config");
         for post in posts {
             upload_post(&config.instance, post, &config.token).expect("Couldn't upload post");
-            break;
         }
-        break;
     }
 
     // For each new post:
