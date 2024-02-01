@@ -42,6 +42,7 @@ fn utf8_split(input: &str, maxsize: usize) -> (&str, &str) {
 pub fn upload_post(instance_domain: &str, post: Post, token: &str) -> anyhow::Result<()> {
     let client = Client::new();
 
+    // Split description into parts
     let mut parts: Vec<String> = Vec::new();
     if post.description.len() > 492 {
         let mut lines: Vec<_> = post.description.split('\n').collect();
@@ -69,29 +70,64 @@ pub fn upload_post(instance_domain: &str, post: Post, token: &str) -> anyhow::Re
         parts.push(post.description);
     }
 
+    // Split media into parts
+    let mut media_parts = Vec::new();
+    let image_count = post.content_paths.iter().filter(|path| path.ends_with(".jpg")).count();
+    let video_count = post.content_paths.iter().filter(|path| path.ends_with(".mp4")).count();
+    if video_count == 1 && image_count == 1 {
+        let video = post.content_paths.iter().find(|path| path.ends_with(".mp4")).unwrap();
+        media_parts.push(vec![video]);
+    } else {
+        if video_count > 0 {
+            let videos = post.content_paths.iter().filter(|path| path.ends_with(".mp4"));
+            for video in videos {
+                media_parts.push(vec![video]);
+            }
+        }
+        if image_count > 0 {
+            let images = post.content_paths.iter().filter(|path| path.ends_with(".jpg")).collect::<Vec<_>>();
+            for images in images.chunks(4) {
+                media_parts.push(images.to_owned());
+            }
+        }
+    }
+
+    // Make sure parts and media_parts have the same length
+    while parts.len() > media_parts.len() {
+        media_parts.push(Vec::new());
+    }
+    while media_parts.len() > parts.len() {
+        parts.push(String::new());
+    }
+
     let mut previous_id = None;
     let part_len = parts.len();
-    for (i, part) in parts.into_iter().enumerate() {
-        let part = match part_len == 1 {
-            true => part.trim().to_owned(),
-            false => format!("{} [{}/{part_len}]", part.trim(), i + 1)
-        };
-        let mut form = Form::new()
-            .text("status", part)
-            .text("language", "fr");
+    for (i, (part, media_part)) in parts.into_iter().zip(media_parts).enumerate() {
+        // Add text and settings
+        let mut form = Form::new();
+        if !part.is_empty() {
+            let part = match part_len == 1 {
+                true => part.trim().to_owned(),
+                false => format!("{} [{}/{part_len}]", part.trim(), i + 1)
+            };
+            form = form.text("status", part).text("language", "fr")
+        }
         match previous_id {
             Some(id) => {
                 form = form.text("in_reply_to_id", id).text("visibility", "unlisted");
             },
             None => {
-                for content_path in &post.content_paths {
-                    let id = upload_media(instance_domain, content_path, token, &client)?;
-                    form = form.text("media_ids[]", id);
-                }
                 form = form.text("visibility", "public");
             }
         }
 
+        // Add media
+        for content_path in media_part {
+            let id = upload_media(instance_domain, content_path, token, &client)?;
+            form = form.text("media_ids[]", id);
+        }
+
+        // Send request
         let url = format!("https://{instance_domain}/api/v1/statuses");
         let url = Url::parse(&url)?;
         let rep = client.post(url)
