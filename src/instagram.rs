@@ -97,3 +97,20 @@ pub fn detect_all(config: &Config) -> HashMap<String, Vec<Post>> {
     }
     posts
 }
+
+pub fn delete_post(instagram_username: &str, post: Post) -> anyhow::Result<()> {
+    let dir_entries = std::fs::read_dir(format!("insta/{instagram_username}"))?;
+    for entry in dir_entries {
+        let entry = entry?;
+        let path = entry.path();
+        if entry.metadata()?.is_dir() {
+            continue;
+        }
+        let filename = path.file_name().unwrap().to_str().unwrap();
+        if filename.starts_with(&post.id) {
+            let _ = std::fs::remove_file(path);
+        }
+    }
+
+    Ok(())
+}

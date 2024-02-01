@@ -41,7 +41,7 @@ fn utf8_split(input: &str, maxsize: usize) -> (&str, &str) {
     }
 }
 
-pub fn upload_post(instance_domain: &str, post: Post, token: &str) -> anyhow::Result<()> {
+pub fn upload_post(instance_domain: &str, post: &Post, token: &str) -> anyhow::Result<()> {
     let client = Client::new();
 
     // Split description into parts
@@ -69,7 +69,7 @@ pub fn upload_post(instance_domain: &str, post: Post, token: &str) -> anyhow::Re
             }
         }
     } else {
-        parts.push(post.description);
+        parts.push(post.description.to_owned());
     }
 
     // Split media into parts
