@@ -47,7 +47,7 @@ fn detect_posts(instagram_username: &str) -> Vec<Post> {
 
     // Read directory
     let mut post_ids = HashSet::new();
-    let mut filenames = HashSet::new();
+    let mut file_paths = HashMap::new();
     for entry in readdir {
         let entry = entry.unwrap();
         let path = entry.path();
@@ -59,7 +59,7 @@ fn detect_posts(instagram_username: &str) -> Vec<Post> {
             let post_id = get_all_before(filename, "_UTC");
             post_ids.insert(post_id.to_string());
         }
-        filenames.insert(filename.to_string());
+        file_paths.insert(filename.to_string(), path);
     }
 
     // Collect data into posts
@@ -72,8 +72,8 @@ fn detect_posts(instagram_username: &str) -> Vec<Post> {
         let mut content_paths = Vec::new();
         for suffix in ["_UTC.jpg", "_UTC_1.jpg", "_UTC_2.jpg", "_UTC_3.jpg", "_UTC_4.jpg", "_UTC_5.jpg", "_UTC_6.jpg", "_UTC_7.jpg", "_UTC_8.jpg", "_UTC_9.jpg", "_UTC_10.jpg", "_UTC.mp4"].iter() {
             let filename = format!("{post_id}{suffix}");
-            if filenames.contains(&filename) {
-                content_paths.push(filename);
+            if let Some(path) = file_paths.get(&filename) {
+                content_paths.push(path.to_str().unwrap_or("").to_string());
             }
         }
         content_paths.sort();
