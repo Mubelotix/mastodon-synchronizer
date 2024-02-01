@@ -43,20 +43,20 @@ pub fn upload_post(instance_domain: &str, post: Post, token: &str) -> anyhow::Re
     let client = Client::new();
 
     let mut parts: Vec<String> = Vec::new();
-    if post.description.len() > 500 {
+    if post.description.len() > 492 {
         let mut lines: Vec<_> = post.description.split('\n').collect();
         while !lines.is_empty() {
             let line = lines.remove(0);
             match parts.last_mut() {
-                None if line.len() > 500 => {
-                    let (before, after) = utf8_split(line, 500);
+                None if line.len() > 492 => {
+                    let (before, after) = utf8_split(line, 492);
                     parts.push(before.to_owned());
                     lines.insert(0, after);
                 },
                 None => {
                     parts.push(line.to_owned())
                 },
-                Some(content) if content.len() + 1 + line.len() > 500 => {
+                Some(content) if content.len() + 1 + line.len() > 492 => {
                     parts.push(line.to_owned())
                 },
                 Some(content) => {
@@ -70,7 +70,12 @@ pub fn upload_post(instance_domain: &str, post: Post, token: &str) -> anyhow::Re
     }
 
     let mut previous_id = None;
-    for part in parts {
+    let part_len = parts.len();
+    for (i, part) in parts.into_iter().enumerate() {
+        let part = match part_len == 1 {
+            true => part.trim().to_owned(),
+            false => format!("{} [{}/{part_len}]", part.trim(), i + 1)
+        };
         let mut form = Form::new()
             .text("status", part)
             .text("language", "fr");
