@@ -116,11 +116,11 @@ pub fn upload_post(instance_domain: &str, post: &Post, token: &str) -> anyhow::R
         loop {
             // Add text and settings
             let mut form = Form::new();
+            let part = match part_len == 1 {
+                true => part.trim().to_owned(),
+                false => format!("{} [{}/{part_len}]", part.trim(), i + 1)
+            };
             if !part.is_empty() {
-                let part = match part_len == 1 {
-                    true => part.trim().to_owned(),
-                    false => format!("{} [{}/{part_len}]", part.trim(), i + 1)
-                };
                 form = form.text("status", part).text("language", "fr")
             }
             match previous_id.clone() {
