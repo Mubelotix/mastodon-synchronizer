@@ -66,10 +66,7 @@ fn detect_posts(instagram_username: &str) -> Vec<Post> {
     // Collect data into posts
     let mut posts = Vec::new();
     for post_id in post_ids {
-        let Ok(description) = std::fs::read_to_string(format!("insta/{instagram_username}/{post_id}_UTC.txt")) else {
-            eprintln!("Failed to read file insta/{instagram_username}/{post_id}_UTC.txt");
-            continue;
-        };
+        let description = std::fs::read_to_string(format!("insta/{instagram_username}/{post_id}_UTC.txt")).unwrap_or_default();
         let mut content_paths = Vec::new();
         for suffix in ["_UTC.jpg", "_UTC_1.jpg", "_UTC_2.jpg", "_UTC_3.jpg", "_UTC_4.jpg", "_UTC_5.jpg", "_UTC_6.jpg", "_UTC_7.jpg", "_UTC_8.jpg", "_UTC_9.jpg", "_UTC_10.jpg", "_UTC.mp4"].iter() {
             let filename = format!("{post_id}{suffix}");
