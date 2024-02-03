@@ -4,18 +4,21 @@ use progress_bar::{
     enable_eta, finalize_progress_bar, inc_progress_bar, init_progress_bar,
     print_progress_bar_info, Color, Style, set_progress_bar_action,
 };
-use string_tools::get_all_before;
+use string_tools::{get_all_after_strict, get_all_before};
 
-fn download(instagram_username: &str, login_username: &Option<String>) -> Result<(), ()> {
+fn download(instagram_username: &str, login_username: &Option<String>) -> Result<(), String> {
     let command = match login_username {
         Some(login_username) => format!(
-            "venv/bin/instaloader --latest-stamps insta/stamps.ini --login={login_username} --sessionfile=insta/session --dirname-pattern=insta/{{profile}} --quiet --profile {instagram_username}"
+            ".venv/bin/instaloader --latest-stamps insta/stamps.ini --login={login_username} --sessionfile=insta/session --dirname-pattern=insta/{{profile}} {instagram_username}"
         ),
         None => format!(
-            "venv/bin/instaloader --latest-stamps insta/stamps.ini --sessionfile=insta/session --dirname-pattern=insta/{{profile}} --quiet --profile {instagram_username}"
+            ".venv/bin/instaloader --latest-stamps insta/stamps.ini --sessionfile=insta/session --dirname-pattern=insta/{{profile}} {instagram_username}"
         )
     };
-    run_shell_command(command).map_err(|_| ())?;
+    let stdout = run_shell_command(command)?;
+    if let Some(error) = get_all_after_strict(&stdout, "Errors or warnings occurred:\n") {
+        return Err(error.to_owned());
+    }
     Ok(())
 }
 
@@ -25,10 +28,15 @@ pub fn download_all(config: &Config) {
     set_progress_bar_action("Downloading", Color::Green, Style::Bold);
     for account in config {
         print_progress_bar_info("Downloading", &account.instagram, Color::Green, Style::Bold);
-        if download(&account.instagram, &account.login).is_err() {
-            print_progress_bar_info("Failed", &format!("download for @{}@instagram.com", account.instagram), Color::Red, Style::Bold);
+        if let Err(e) = download(&account.instagram, &account.login) {
+            print_progress_bar_info("Failed", &format!("download for @{}@instagram.com ({e:?})", account.instagram), Color::Red, Style::Bold);
+            if e.contains("Redirected to login page.") {
+                print_progress_bar_info("Aborting", "due to rate limits", Color::Red, Style::Bold);
+                break;
+            }
         }
         inc_progress_bar();
+        sleep(Duration::from_secs(10));
     }
     finalize_progress_bar();
 }
