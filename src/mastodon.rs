@@ -51,7 +51,7 @@ pub fn upload_post(instance_domain: &str, post: &Post, token: &str) -> anyhow::R
         while !lines.is_empty() {
             let line = lines.remove(0);
             match parts.last_mut() {
-                None if line.len() > 492 => {
+                _ if line.len() > 492 => {
                     let (before, after) = utf8_split(line, 492);
                     parts.push(before.to_owned());
                     lines.insert(0, after);
