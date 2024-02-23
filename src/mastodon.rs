@@ -46,20 +46,20 @@ pub fn upload_post(instance_domain: &str, post: &Post, token: &str) -> anyhow::R
 
     // Split description into parts
     let mut parts: Vec<String> = Vec::new();
-    if post.description.len() > 492 {
+    if post.description.len() > 500 {
         let mut lines: Vec<_> = post.description.split('\n').collect();
         while !lines.is_empty() {
             let line = lines.remove(0);
             match parts.last_mut() {
-                None if line.len() > 492 => {
-                    let (before, after) = utf8_split(line, 492);
+                None if line.len() > 491 => {
+                    let (before, after) = utf8_split(line, 491);
                     parts.push(before.to_owned());
                     lines.insert(0, after);
                 },
                 None => {
                     parts.push(line.to_owned())
                 },
-                Some(content) if content.len() + 1 + line.len() > 492 => {
+                Some(content) if content.len() + 1 + line.len() > 491 => {
                     parts.push(line.to_owned())
                 },
                 Some(content) => {
