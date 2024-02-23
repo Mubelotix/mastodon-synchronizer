@@ -51,15 +51,15 @@ pub fn upload_post(instance_domain: &str, post: &Post, token: &str) -> anyhow::R
         while !lines.is_empty() {
             let line = lines.remove(0);
             match parts.last_mut() {
-                None if line.len() > 491 => {
-                    let (before, after) = utf8_split(line, 491);
+                None if line.len() > 492 => {
+                    let (before, after) = utf8_split(line, 492);
                     parts.push(before.to_owned());
                     lines.insert(0, after);
                 },
                 None => {
                     parts.push(line.to_owned())
                 },
-                Some(content) if content.len() + 1 + line.len() > 491 => {
+                Some(content) if content.len() + 1 + line.len() > 492 => {
                     parts.push(line.to_owned())
                 },
                 Some(content) => {
@@ -120,6 +120,7 @@ pub fn upload_post(instance_domain: &str, post: &Post, token: &str) -> anyhow::R
                 true => part.trim().to_owned(),
                 false => format!("{} [{}/{part_len}]", part.trim(), i + 1)
             };
+            println!("{part:?}");
             if !part.is_empty() {
                 form = form.text("status", part).text("language", "fr")
             }
